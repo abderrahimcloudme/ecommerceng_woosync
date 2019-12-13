@@ -819,11 +819,6 @@ class InterfaceECommerceng
                     dol_syslog("Triggers was ran from a create/update to sync from ecommerce to dolibarr, so we won't run code to sync from dolibarr to ecommerce");
                     continue;
                 }
-		    
-		if (empty($site->parameters['realtime_dtoe']['order'])) {
-                    dol_syslog("Triggers disabled from the config of the module");
-                    continue;
-                }
 
             	try
             	{
@@ -936,7 +931,7 @@ class InterfaceECommerceng
                 try
                 {
                     // Do we sync the stock ?
-                    if (! $error && $site->stock_sync_direction == 'dolibarr2ecommerce' && $site->fk_warehouse == $object->entrepot_id)
+                    if (! $error && $site->stock_sync_direction == 'dolibarr2ecommerce')
                     {
                         $eCommerceProduct = new eCommerceProduct($this->db);
                         $eCommerceProduct->fetchByProductId($object->product_id, $site->id);
@@ -944,9 +939,8 @@ class InterfaceECommerceng
                         // Get new qty. We read stock_reel of product. Trigger is called after creating movement and updating table product, so we get total after move.
                         $dbProduct = new Product($this->db);
                         $dbProduct->fetch($object->product_id);
-                        $dbProduct->load_stock();
 
-                        $object->qty_after = isset($dbProduct->stock_warehouse[$object->entrepot_id]->real) ? $dbProduct->stock_warehouse[$object->entrepot_id]->real : 0;
+                        $object->qty_after = $dbProduct->stock_reel;
 
                         if ($eCommerceProduct->remote_id > 0)
                         {

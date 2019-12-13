@@ -226,7 +226,7 @@ class eCommerceRemoteAccessWoocommerce
                 $this->site->webservice_address,
                 $this->site->oauth_id,
                 $this->site->oauth_secret,
-                dol_buildpath('/ecommerceng/core/modules/oauth/wordpress_oauthcallback.php', 2) . '?ecommerce_id=' . $this->site->id
+                dol_buildpath('/custom/ecommerceng/core/modules/oauth/wordpress_oauthcallback.php', 2) . '?ecommerce_id=' . $this->site->id
             );
         } catch (Exception $e) {
             $this->errors[] = $langs->trans('ECommerceWoocommerceConnect', $this->site->name, $e->getMessage());
@@ -269,7 +269,7 @@ class eCommerceRemoteAccessWoocommerce
                         'per_page' => $per_page,
                         'orderby' => 'registered_date',
                         'order' => 'desc',
-                        'role' => empty($this->site->parameters['customer_roles']) ? 'all' : $this->site->parameters['customer_roles'],
+                        'role' => 'all',
                     ]
                 );
             } catch (HttpClientException $fault) {
@@ -467,7 +467,6 @@ class eCommerceRemoteAccessWoocommerce
         $filter = ['limit' => $per_page];
         if (isset($fromDate) && !empty($fromDate)) $filter['updated_at_min'] = dol_print_date($fromDate - (24 * 60 * 60), 'dayrfc');
         if (isset($toDate) && !empty($toDate)) $filter['updated_at_max'] = dol_print_date($toDate + (24 * 60 * 60), 'dayrfc');
-        $filter['role'] = empty($this->site->parameters['customer_roles']) ? 'all' : $this->site->parameters['customer_roles'];
 
         while (true) {
             try {
@@ -561,7 +560,7 @@ class eCommerceRemoteAccessWoocommerce
                         'include' => implode(',', $request),
                         'orderby' => 'registered_date',
                         'order' => 'desc',
-                        'role' => empty($this->site->parameters['ecommerce_woocommerce_customer_roles']) ? 'all' : $this->site->parameters['ecommerce_woocommerce_customer_roles'],
+                        'role' => 'all',
                     ]
                 );
             } catch (HttpClientException $fault) {
@@ -586,11 +585,11 @@ class eCommerceRemoteAccessWoocommerce
                             'vatnumber' => null,
                             'note_private' => "Site: '{$this->site->name}' - ID: {$company->id}",
                             'country_id' => getCountry($company->billing->country, 3),
-                            'default_lang' => $mysoc->default_lang,
+                        'default_lang' => $mysoc->default_lang,
                             'remote_datas' => $company,
-                            'extrafields' => [
-                                "ecommerceng_wc_role_{$this->site->id}_{$conf->entity}" => $langs->trans('ECommercengWoocommerceCompanyRole_' . $company->role),
-                            ],
+                        'extrafields' => [
+                            "ecommerceng_wc_role_{$this->site->id}_{$conf->entity}" => $langs->trans('ECommercengWoocommerceCompanyRole_' . $company->role),
+                        ],
                         ];
 
                     // Default language
@@ -1088,11 +1087,9 @@ class eCommerceRemoteAccessWoocommerce
 
                     // Set remote id company : 0 for anonymous
                     $eCommerceTempSoc = new eCommerceSociete($this->db);
-                    if (empty($order->customer_id)) {
-                        $remoteCompanyID = 0;   // If is a guest order
-                    } elseif ($eCommerceTempSoc->fetchByRemoteId($order->customer_id, $this->site->id) < 0) {
-                        dol_syslog(__METHOD__ . " The customer (" . $order->customer_id . ") of the remote order ID " . $order->id . " was not found into companies table link", LOG_WARNING);
-                        $remoteCompanyID = -1;   // If company was not found into companies table link so is a user role not supported
+                    if (empty($order->customer_id) || $eCommerceTempSoc->fetchByRemoteId($order->customer_id, $this->site->id) < 0) {
+                        dol_syslog(__METHOD__ . ": The customer of the remote order ID " . $order->id . " was not found into companies table link", LOG_WARNING);
+                        $remoteCompanyID = 0;   // If company was not found into companies table link
                     } else {
                         $remoteCompanyID = $order->customer_id;
                     }
@@ -1184,11 +1181,12 @@ class eCommerceRemoteAccessWoocommerce
                     }
 
                     // Set delivery as service
+                    $shippingDisplayIfNull = (empty($conf->global->ECOMMERCENG_SHIPPING_NOT_DISPLAY_IF_NULL) ? true : false);
                     $delivery = [
                         'description' => $langs->trans('ECommerceShipping') . (isset($order->shipping_lines[0]) ? ' - ' .
                                 $order->shipping_lines[0]->method_title : ''), // $order->customer_note
                         'price' => $order->shipping_total,
-                        'qty' => isset($order->shipping_lines[0]) ? 1 : 0, //0 to not show
+                        'qty' => $shippingDisplayIfNull || isset($order->shipping_lines[0]) ? 1 : 0, //0 to not show
                         'tva_tx' => $this->getClosestDolibarrTaxRate($order->shipping_total, $order->shipping_tax)
                     ];
 
@@ -1223,34 +1221,6 @@ class eCommerceRemoteAccessWoocommerce
                         }
                     }
 
-                    $fee_lines = [];
-                    if (is_array($order->fee_lines)) {
-                        foreach ($order->fee_lines as $fee_line) {
-                            $tax = $this->getClosestDolibarrTaxRate($fee_line->total, $fee_line->total_tax);
-                            $fee_lines[] = [
-                                'label' => $fee_line->name,
-                                'amount' => $fee_line->total * (100 - $tax) / 100,
-                                'tax' => $tax,
-                            ];
-                        }
-                    }
-
-                    $meta_data = [];
-                    if (!empty($order->meta_data)) {
-                        foreach ($order->meta_data as $meta) {
-                            $meta_data[$meta->key] = [ 'id' => $meta->id, 'value' => $meta->value ];
-                        }
-                    }
-
-                    // Manage stripe payment
-                    if (isset($meta_data['_stripe_fee']) && $meta_data['_stripe_fee']['value'] > 0) {
-                        $fee_lines[] = [
-                            'label' => 'Stripe',
-                            'amount' => $meta_data['_stripe_fee']['value'],
-                            'tax' => 0,
-                        ];
-                    }
-
                     // Add order content to array or orders
                     $orders[$order->id] = [
                         'last_update' => $last_update->format('Y-m-d H:i:s'),
@@ -1272,8 +1242,6 @@ class eCommerceRemoteAccessWoocommerce
                         'remote_status' => $order->status,      // remote status, for information only (more accurate than state)
                         'remote_order' => $order,
                         'payment_method' => $order->payment_method_title,
-                        'payment_method_id' => $order->payment_method,
-                        'fee_lines' => $fee_lines,
                         'extrafields' => [
                             "ecommerceng_online_payment_{$conf->entity}" => empty($order->date_paid) ? 0 : 1,
                             "ecommerceng_wc_status_{$this->site->id}_{$conf->entity}" => $orderStatus,
@@ -1504,7 +1472,7 @@ class eCommerceRemoteAccessWoocommerce
         if ($object->weight_units < 50)   // >50 means a standard unit (power of 10 of official unit), > 50 means an exotic unit (like inch)
         {
             $trueWeightUnit = pow(10, $object->weight_units);
-            $totalWeight = sprintf("%f", $object->weight * $trueWeightUnit);
+            $totalWeight = sprintf("%f", floatval($object->weight) * $trueWeightUnit);
         }
 
         // Price
@@ -1862,7 +1830,7 @@ class eCommerceRemoteAccessWoocommerce
                 //'date_on_sale_from_gmt' => '',                                      // date-time	Start date of sale price, as GMT.
                 //'date_on_sale_to'       => '',                                      // date-time	End date of sale price, in the site’s timezone.
                 //'date_on_sale_to_gmt'   => '',                                      // date-time	End date of sale price, in the site’s timezone.
-                'virtual'               => $object->type == Product::TYPE_SERVICE,  // boolean		If the product is virtual. Default is false.
+                //'virtual'               => $object->type == Product::TYPE_SERVICE,  // boolean		If the product is virtual. Default is false.
                 //'downloadable'          => false,                                   // boolean		If the product is downloadable. Default is false.
                 //'downloads'             => $downloads,                              // array		List of downloadable files. See Product - Downloads properties
                 //'download_limit'        => -1,                                      // integer		Number of times downloadable files can be downloaded after purchase. Default is -1.
@@ -1967,7 +1935,7 @@ class eCommerceRemoteAccessWoocommerce
         dol_syslog(__METHOD__ . ": Update stock of the remote product ID $remote_id for MouvementStock ID {$object->id}, new qty: {$object->qty_after} for site ID {$this->site->id}", LOG_DEBUG);
         global $langs, $user;
 
-        $new_stocks = floor($object->qty_after);
+        $new_stocks = ceil($object->qty_after);
         $stocks_label = $object->qty_after . ' -> ' . $new_stocks;
 
         if (preg_match('/^(\d+)\|(\d+)$/', $remote_id, $idsProduct) == 1) {
@@ -3528,37 +3496,6 @@ class eCommerceRemoteAccessWoocommerce
         dol_syslog(__METHOD__ . ": end, return ".(isset($tax)?json_encode($tax):'null'), LOG_DEBUG);
         return $tax;
     }*/
-
-    /**
-     * Get all payment gateways
-     *
-     * @return array|false    List of payment gateways or false if error
-     */
-    public function getAllPaymentGateways()
-    {
-        dol_syslog(__METHOD__ . ": Retrieve all Woocommerce payment gateways", LOG_DEBUG);
-        global $langs;
-
-        try {
-            $payment_gateways = $this->client->get('payment_gateways');
-        } catch (HttpClientException $fault) {
-            $this->errors[] = $langs->trans('ECommerceWoocommerceGetAllWoocommercePaymentGateways', $this->site->name, $fault->getCode() . ': ' . $fault->getMessage());
-            dol_syslog(__METHOD__ .
-                ': Error:' . $langs->transnoentitiesnoconv('ECommerceWoocommerceGetAllWoocommercePaymentGateways', $this->site->name, $fault->getCode() . ': ' . $fault->getMessage()) .
-                ' - Request:' . json_encode($fault->getRequest()) . ' - Response:' . json_encode($fault->getResponse()), LOG_ERR);
-            return false;
-        }
-
-        $paymentGatewaysTable = [];
-        foreach ($payment_gateways as $infos) {
-            if ($infos->enabled) {
-                $paymentGatewaysTable[$infos->id] = $infos->method_title . (!empty($infos->title) ? ' - ' . $infos->title : '');
-            }
-        }
-
-        dol_syslog(__METHOD__ . ": end, return: ".json_encode($paymentGatewaysTable), LOG_DEBUG);
-        return $paymentGatewaysTable;
-    }
 
     /**
      * Get request groups of ID for get datas of remotes objects.

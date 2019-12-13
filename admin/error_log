@@ -1,0 +1,28 @@
+[09-Aug-2019 09:17:19 UTC] PHP Fatal error:  Uncaught InvalidArgumentException: Invalid URI: http|https scheme required in /home/cloudme/public_html/crmf2d/htdocs/includes/OAuth/Common/Http/Uri/Uri.php:86
+Stack trace:
+#0 /home/cloudme/public_html/crmf2d/htdocs/includes/OAuth/Common/Http/Uri/Uri.php(68): OAuth\Common\Http\Uri\Uri->parseUri('crmf2d.cloudmes...')
+#1 /home/cloudme/public_html/crmf2d/htdocs/includes/OAuth/Common/Http/Uri/UriFactory.php(41): OAuth\Common\Http\Uri\Uri->__construct('crmf2d.cloudmes...')
+#2 /home/cloudme/public_html/crmf2d/htdocs/custom/ecommerceng/admin/eCommerceSetup.php(602): OAuth\Common\Http\Uri\UriFactory->createFromAbsolute('crmf2d.cloudmes...')
+#3 {main}
+  thrown in /home/cloudme/public_html/crmf2d/htdocs/includes/OAuth/Common/Http/Uri/Uri.php on line 86
+[09-Aug-2019 09:22:12 UTC] PHP Fatal error:  Uncaught InvalidArgumentException: Invalid URI: http|https scheme required in /home/cloudme/public_html/crmf2d/htdocs/includes/OAuth/Common/Http/Uri/Uri.php:86
+Stack trace:
+#0 /home/cloudme/public_html/crmf2d/htdocs/includes/OAuth/Common/Http/Uri/Uri.php(68): OAuth\Common\Http\Uri\Uri->parseUri('crmf2d.cloudmes...')
+#1 /home/cloudme/public_html/crmf2d/htdocs/includes/OAuth/Common/Http/Uri/UriFactory.php(41): OAuth\Common\Http\Uri\Uri->__construct('crmf2d.cloudmes...')
+#2 /home/cloudme/public_html/crmf2d/htdocs/custom/ecommerceng/admin/eCommerceSetup.php(602): OAuth\Common\Http\Uri\UriFactory->createFromAbsolute('crmf2d.cloudmes...')
+#3 {main}
+  thrown in /home/cloudme/public_html/crmf2d/htdocs/includes/OAuth/Common/Http/Uri/Uri.php on line 86
+[09-Aug-2019 09:24:27 UTC] PHP Fatal error:  Uncaught InvalidArgumentException: Invalid URI: http|https scheme required in /home/cloudme/public_html/crmf2d/htdocs/includes/OAuth/Common/Http/Uri/Uri.php:86
+Stack trace:
+#0 /home/cloudme/public_html/crmf2d/htdocs/includes/OAuth/Common/Http/Uri/Uri.php(68): OAuth\Common\Http\Uri\Uri->parseUri('crmf2d.cloudmes...')
+#1 /home/cloudme/public_html/crmf2d/htdocs/includes/OAuth/Common/Http/Uri/UriFactory.php(41): OAuth\Common\Http\Uri\Uri->__construct('crmf2d.cloudmes...')
+#2 /home/cloudme/public_html/crmf2d/htdocs/custom/ecommerceng/admin/eCommerceSetup.php(602): OAuth\Common\Http\Uri\UriFactory->createFromAbsolute('crmf2d.cloudmes...')
+#3 {main}
+  thrown in /home/cloudme/public_html/crmf2d/htdocs/includes/OAuth/Common/Http/Uri/Uri.php on line 86
+[09-Aug-2019 09:24:30 UTC] PHP Fatal error:  Uncaught InvalidArgumentException: Invalid URI: http|https scheme required in /home/cloudme/public_html/crmf2d/htdocs/includes/OAuth/Common/Http/Uri/Uri.php:86
+Stack trace:
+#0 /home/cloudme/public_html/crmf2d/htdocs/includes/OAuth/Common/Http/Uri/Uri.php(68): OAuth\Common\Http\Uri\Uri->parseUri('crmf2d.cloudmes...')
+#1 /home/cloudme/public_html/crmf2d/htdocs/includes/OAuth/Common/Http/Uri/UriFactory.php(41): OAuth\Common\Http\Uri\Uri->__construct('crmf2d.cloudmes...')
+#2 /home/cloudme/public_html/crmf2d/htdocs/custom/ecommerceng/admin/eCommerceSetup.php(602): OAuth\Common\Http\Uri\UriFactory->createFromAbsolute('crmf2d.cloudmes...')
+#3 {main}
+  thrown in /home/cloudme/public_html/crmf2d/htdocs/includes/OAuth/Common/Http/Uri/Uri.php on line 86
